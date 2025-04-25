@@ -1,0 +1,34 @@
+{
+  "name": "flow-shop-algorithms",
+  "version": "0.1.0",
+  "description": "Different algorithms implementations for flow shop problems",
+  "keywords": [
+    "flow-shop",
+    "neh"
+  ],
+  "homepage": "https://github.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KrystianOg/flow-shop"
+  },
+  "license": "MIT",
+  "author": "Krystian Ogonowski <krystian@ogonowski.it>",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsc",
+    "ci": "npm run build && npm run check-format",
+    "format": "prettier --write .",
+    "check-format": "prettier --check ."
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
+  },
+  "main": "dist/index.js"
+}

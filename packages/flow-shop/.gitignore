@@ -1,0 +1,6 @@
+node_modules/
+dist/
+
+# for now 
+data/
+converted_files/
