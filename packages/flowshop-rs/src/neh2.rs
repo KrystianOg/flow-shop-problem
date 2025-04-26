@@ -1,3 +1,5 @@
+use std::ptr;
+
 pub fn nehh(times: &[usize], n_jobs: usize, n_machines: usize) -> Vec<usize> {
     let mut jobs: Vec<usize> = (0..n_jobs).collect();
     jobs.sort_unstable_by_key(|&i| {
@@ -9,7 +11,7 @@ pub fn nehh(times: &[usize], n_jobs: usize, n_machines: usize) -> Vec<usize> {
     });
 
     let mut sequence = Vec::with_capacity(n_jobs);
-    let mut temp_sequence = Vec::with_capacity(n_jobs);
+    let mut best_sequence = Vec::with_capacity(n_jobs);
 
     let mut completion = vec![0; n_machines];
     let mut temp_completion = vec![0; n_machines];
@@ -18,43 +20,61 @@ pub fn nehh(times: &[usize], n_jobs: usize, n_machines: usize) -> Vec<usize> {
 
     for &job in &jobs[1..] {
         let mut best_makespan = usize::MAX;
-        let mut best_position = 0;
+        best_sequence.clear();
 
         for pos in 0..=sequence.len() {
-            temp_sequence.clear();
-            temp_sequence.extend_from_slice(&sequence[..pos]);
-            temp_sequence.push(job);
-            temp_sequence.extend_from_slice(&sequence[pos..]);
+            best_sequence.extend_from_slice(&sequence[..pos]);
+            best_sequence.push(job);
+            best_sequence.extend_from_slice(&sequence[pos..]);
 
-            let makespan =
-                calculate_makespan_fast(times, &temp_sequence, n_machines, &mut temp_completion);
+            let makespan = unsafe {
+                calculate_makespan_unchecked(
+                    times,
+                    &best_sequence,
+                    n_machines,
+                    &mut temp_completion,
+                )
+            };
 
             if makespan < best_makespan {
                 best_makespan = makespan;
-                best_position = pos;
+                sequence.clear();
+                sequence.extend_from_slice(&best_sequence);
             }
-        }
 
-        sequence.insert(best_position, job);
+            best_sequence.clear();
+        }
     }
 
     sequence
 }
 
-fn calculate_makespan_fast(
+#[inline(always)]
+unsafe fn calculate_makespan_unchecked(
     times: &[usize],
     sequence: &[usize],
     n_machines: usize,
     completion: &mut [usize],
 ) -> usize {
-    completion.fill(0);
+    let mut comp_ptr = completion.as_mut_ptr();
+    for i in 0..n_machines {
+        ptr::write(comp_ptr.add(i), 0);
+    }
 
     for &job in sequence {
-        completion[0] += times[job * n_machines];
+        let job_ptr = times.as_ptr().add(job * n_machines);
+
+        let first = comp_ptr;
+        let first_time = *job_ptr;
+        ptr::write(first, *first + first_time);
+
         for m in 1..n_machines {
-            completion[m] = completion[m].max(completion[m - 1]) + times[job * n_machines + m];
+            let prev = *comp_ptr.add(m - 1);
+            let current = *comp_ptr.add(m);
+            let time = *job_ptr.add(m);
+            ptr::write(comp_ptr.add(m), prev.max(current) + time);
         }
     }
 
-    completion[n_machines - 1]
+    *comp_ptr.add(n_machines - 1)
 }
