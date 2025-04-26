@@ -1,3 +1,5 @@
+#![feature(portable_simd)]
+
 mod neh;
 mod neh2;
 mod reader;
