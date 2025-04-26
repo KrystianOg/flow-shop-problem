@@ -21,14 +21,15 @@ pub fn neh(times: &[Job]) -> Order {
         .map(|(job_id, job)| (job_id + 1, job.iter().sum()))
         .collect();
 
-    jobs_with_total_times.sort_by(|a, b| b.1.cmp(&a.1));
+    jobs_with_total_times.sort_unstable_by(|a, b| b.1.cmp(&a.1));
 
     let machine_count = times[0].len();
     let mut buffer = vec![0; machine_count];
 
     // pre-allocate `order`
     let mut order: Order = Vec::with_capacity(times.len());
-    // let mut order: Order = Vec::new();
+
+    let mut final_order: Order = Vec::with_capacity(times.len());
 
     for &(job_id, _) in &jobs_with_total_times {
         let mut best_makespan = usize::MAX;
@@ -36,22 +37,13 @@ pub fn neh(times: &[Job]) -> Order {
 
         // save original order
         order.push(job_id);
-        for i in (0..order.len()).rev() {
+        for i in 0..order.len() {
             order.swap(i, i.saturating_sub(1));
             let current_makespan = makespan(&order, times, &mut buffer, machine_count);
             if current_makespan < best_makespan {
                 best_makespan = current_makespan;
                 best_position = i.saturating_sub(1);
             }
-
-            // let mut temp_order = order.clone();
-            // temp_order.insert(i, job_id);
-            // let current_makespan = makespan(&temp_order, times);
-            //
-            // if current_makespan < best_makespan {
-            //     best_makespan = current_makespan;
-            //     best_position = i;
-            // }
         }
 
         let inserted = order.pop().unwrap();
