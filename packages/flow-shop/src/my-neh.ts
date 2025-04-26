@@ -1,40 +1,6 @@
 type Job = number[];
 type Order = number[];
 
-// function makespan(perm: Order, times: Job[]): number {
-//   const jobCount = perm.length;
-//   const machineCount = times[0]?.length;
-
-//   console.log(jobCount, machineCount);
-
-//   const makespanMatrix: number[][] = Array.from({ length: jobCount + 1 }, () =>
-//     new Array(machineCount + 1).fill(0),
-//   );
-
-//   // Loop through each job in the permutation order
-//   for (let i = 0; i < jobCount; i++) {
-//     const jobId = perm[i]; // Get the job ID from the permutation
-
-//     if (jobId < 1 || jobId > times.length) {
-//       console.log(1, jobId, times.length);
-//     }
-
-//     // Loop through each machine
-//     for (let machine = 0; machine < machineCount; machine++) {
-//       if (!times[jobId - 1])
-//         // Calculate the makespan at this position (job, machine)
-//         makespanMatrix[i + 1][machine + 1] =
-//           Math.max(
-//             makespanMatrix[i][machine + 1],
-//             makespanMatrix[i + 1][machine],
-//           ) + times[jobId - 1][machine];
-//     }
-//   }
-
-//   // The final makespan is in the bottom-right corner of the matrix
-//   return makespanMatrix[jobCount][machineCount];
-// }
-
 function makespan(perm: Order, times: Job[]): number {
   const jobCount = perm.length;
   const machineCount = times[0]?.length;
@@ -113,7 +79,7 @@ export function calculateCmax(
     const jobId = optimalOrder[i] - 1; // Convert to 0-based index
 
     for (let machine = 0; machine < machineCount; machine++) {
-      if (!times[jobId - 1]) {
+      if (!times[jobId]) {
         continue;
       }
       if (machine === 0) {
