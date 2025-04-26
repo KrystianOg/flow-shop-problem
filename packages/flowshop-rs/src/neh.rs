@@ -27,7 +27,7 @@ pub fn neh(times: &[Job]) -> Order {
     let mut buffer = vec![0; machine_count];
 
     // pre-allocate `order`
-    let mut order: Order = Vec::with_capacity(times.len());
+    let mut temp_order: Order = Vec::with_capacity(times.len());
 
     let mut final_order: Order = Vec::with_capacity(times.len());
 
@@ -36,44 +36,35 @@ pub fn neh(times: &[Job]) -> Order {
         let mut best_position = 0;
 
         // save original order
-        order.push(job_id);
-        for i in 0..order.len() {
-            order.swap(i, i.saturating_sub(1));
-            let current_makespan = makespan(&order, times, &mut buffer, machine_count);
+        for pos in 0..=final_order.len() {
+            temp_order.clear();
+            temp_order.extend_from_slice(&final_order[..pos]);
+            temp_order.push(job_id);
+            temp_order.extend_from_slice(&final_order[pos..]);
+
+            let current_makespan = makespan(&temp_order, times, &mut buffer, machine_count);
             if current_makespan < best_makespan {
                 best_makespan = current_makespan;
-                best_position = i.saturating_sub(1);
+                best_position = pos;
             }
         }
 
-        let inserted = order.pop().unwrap();
-        order.insert(best_position, inserted);
+        final_order.insert(best_position, job_id);
     }
 
-    order
+    final_order
 }
 
 pub fn calculate_cmax(optimal_order: &[usize], times: &[Job]) -> usize {
-    let job_count = optimal_order.len();
-    let machine_count = if !times.is_empty() { times[0].len() } else { 0 };
+    let machine_count = times[0].len();
 
     let mut completion_times = vec![0; machine_count];
 
-    for i in 0..job_count {
-        let job_id = optimal_order[i] - 1;
-
-        for machine in 0..machine_count {
-            if job_id >= times.len() {
-                continue;
-            }
-            if machine == 0 {
-                completion_times[machine] =
-                    completion_times[machine].max(0) + times[job_id][machine];
-            } else {
-                completion_times[machine] = completion_times[machine]
-                    .max(completion_times[machine - 1])
-                    + times[job_id][machine];
-            }
+    for &job_id in optimal_order {
+        let mut prev = 0;
+        for (machine, buf) in completion_times.iter_mut().enumerate() {
+            prev = prev.max(*buf) + times[job_id - 1][machine];
+            *buf = prev;
         }
     }
 
