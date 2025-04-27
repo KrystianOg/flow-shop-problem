@@ -24,6 +24,8 @@ struct Cli {
 
     #[arg(short = 's', long)]
     seed: Option<u32>,
+    // #[arg(long)]
+    // lower_bound: Option<u32> = ,
 }
 
 #[derive(Subcommand)]
@@ -51,15 +53,14 @@ pub fn cli() {
             }
         }
         None => {
-            let processing_times =
-                generate_flow_shop(cli.seed.unwrap_or(rand::random()), cli.jobs, cli.machines);
+            let (processing_times, seed) = generate_flow_shop(cli.jobs, cli.machines, cli.seed);
 
             let output_filename: String = match cli.output_file {
                 Some(i) => i,
                 None => format!("tai{}_{}.txt", cli.jobs, cli.machines),
             };
 
-            let _ = save_to_file(&output_filename, &processing_times);
+            let _ = save_to_file(&output_filename, &processing_times, seed);
         }
     }
 }
