@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use rayon::prelude::*;
+// use std::sync::{Arc, Mutex};
 
 type Order = Vec<usize>;
 
@@ -32,26 +33,10 @@ pub fn makespan(perm: &[usize], times: &[usize], buffer: &mut [usize], n_machine
     buffer[n_machines - 1]
 }
 
-pub fn cached_makespan(
-    perm: &[usize],
-    times: &[usize],
-    buffer: &mut [usize],
-    n_machines: usize,
-    cache: &mut HashMap<Vec<usize>, usize>,
-) -> usize {
-    if let Some(&cached_result) = cache.get(perm) {
-        return cached_result;
-    }
-
-    let result = makespan(perm, times, buffer, n_machines);
-
-    cache.insert(perm.to_vec(), result);
-
-    result
-}
-
 pub fn neh(times: &[usize], n_jobs: usize, n_machines: usize) -> Vec<usize> {
-    let mut jobs_with_total_times: Vec<(usize, usize)> = (0..n_jobs)
+    // Parallelize the calculation of the total times for each job
+    let jobs_with_total_times: Vec<(usize, usize)> = (0..n_jobs)
+        .into_par_iter() // Parallel iterator
         .map(|job_id| {
             let start = job_id * n_machines;
             let end = start + n_machines;
@@ -59,27 +44,35 @@ pub fn neh(times: &[usize], n_jobs: usize, n_machines: usize) -> Vec<usize> {
         })
         .collect();
 
+    // Sort jobs based on their total times (still a sequential operation)
+    let mut jobs_with_total_times = jobs_with_total_times;
     jobs_with_total_times.sort_unstable_by(|a, b| b.1.cmp(&a.1));
 
-    let mut buffer = vec![0; n_machines];
-
-    // pre-allocate `order`
-    let mut temp_order: Order = Vec::with_capacity(n_jobs);
-
+    // let mut buffer = vec![0; n_machines];
+    // let buffer = Arc::new(Mutex::new(vec![0; n_machines]));
+    // let mut temp_order: Order = Vec::with_capacity(n_jobs);
     let mut final_order: Order = Vec::with_capacity(n_jobs);
 
     for &(job_id, _) in &jobs_with_total_times {
         let mut best_makespan = usize::MAX;
         let mut best_position = 0;
 
-        // save original order
-        for pos in 0..=final_order.len() {
-            temp_order.clear();
-            temp_order.extend_from_slice(&final_order[..pos]);
-            temp_order.push(job_id);
-            temp_order.extend_from_slice(&final_order[pos..]);
+        // We perform the search for the best position sequentially
+        let results: Vec<(usize, usize)> = (0..=final_order.len())
+            .into_par_iter() // Parallel iterator for positions
+            .map(|pos| {
+                // let mut buffer = buffer.lock().unwrap();
+                let mut temp_order = final_order.clone();
+                temp_order.insert(pos, job_id);
 
-            let current_makespan = makespan(&temp_order, times, &mut buffer, n_machines);
+                let mut local_buffer = vec![0; n_machines];
+                let current_makespan = makespan(&temp_order, times, &mut local_buffer, n_machines);
+                (current_makespan, pos)
+            })
+            .collect();
+
+        // Find the best position with the minimum makespan
+        for (current_makespan, pos) in results {
             if current_makespan < best_makespan {
                 best_makespan = current_makespan;
                 best_position = pos;

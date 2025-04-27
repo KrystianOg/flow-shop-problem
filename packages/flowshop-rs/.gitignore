@@ -1,2 +1,4 @@
 target/
 taillard-benchmark/
+
+flamegraph.svg

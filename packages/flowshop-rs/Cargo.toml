@@ -4,11 +4,22 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# portable-simd = "0.4"
+good_lp = { version = "1.13.0", features = ["lp-solvers"]}
+grb = { version = "3.0.1", features = ["gurobi12"] }
+rand = "0.9.1"
+rayon = "1.10.0"
+
+[dev-dependencies]
+criterion = { version =  "0.5.1", features = ["html_reports"] }
+flamegraph = "0.6.7"
 
 [profile.release]
-opt-level = 3 # or 3 depending if you prefer size or speed
-# codegen-units = 1
-# lto = true
-# panic = 'abort'
-# strip = true
+debug = true
+
+[[bench]]
+name = "benchmark_neh"
+harness = false
+
+[[bench]]
+name = "benchmark_ig"
+harness = false
