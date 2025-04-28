@@ -5,6 +5,10 @@ on:
     tags:
       - "v*"
 
+# elevate permissions for release
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -25,7 +29,7 @@ jobs:
     name: Build
     runs-on: ${{ matrix.os }}
     env:
-      VERSION: v0.0.0-rc0
+      VERSION: ${{ github.ref_name }}
     defaults:
       run:
         working-directory: packages/fsp-gen
@@ -42,8 +46,6 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
-        # with:
-        #   workspaces: "./packages/fsp-gen -> target"
 
       - name: Install cross-compile tools (windows)
         if: matrix.target == 'x86_64-pc-windows-gnu'
@@ -99,6 +101,10 @@ jobs:
         run: |
           cd dist
           sha256sum * > SHA256SUMS.txt
+
+      - name: List dist folder
+        run: |
+          ls -lh dist/
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
