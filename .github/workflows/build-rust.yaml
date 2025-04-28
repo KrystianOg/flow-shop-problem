@@ -1,12 +1,17 @@
-name: Release FSP Generator
+name: Build and Release
 
 on:
   push:
     tags:
-      - "v*"
+      - "v*.*.*"
+
+env:
+  WORKDIR: packages/fsp-gen
 
 jobs:
   build:
+    name: Build
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
@@ -22,85 +27,110 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             suffix: macos-aarch64
-    name: Build
-    runs-on: ${{ matrix.os }}
-    env:
-      VERSION: v0.0.0-rc0
     defaults:
       run:
-        working-directory: packages/fsp-gen
+        working-directory: ${{ env.WORKDIR }}
+    env:
+      VERSION: ${{ github.ref_name }}
 
     steps:
-      - name: Early skip MacOS on act
-        if: env.ACT == 'true' && startsWith(matrix.os, 'macos')
-        run: |
-          echo "Skipping macOS build under act"
-          exit 0
+      - uses: actions/checkout@v4
 
-      - name: Checkout source code
-        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
 
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        # with:
-        #   workspaces: "./packages/fsp-gen -> target"
-
-      - name: Install cross-compile tools (windows)
+      - name: Install mingw on Windows target
         if: matrix.target == 'x86_64-pc-windows-gnu'
         run: |
-          sudo apt update 
+          sudo apt update
           sudo apt install -y mingw-w64
 
-      - name: Setup rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - name: Install Rust target
-        run: rustup target add ${{ matrix.target }}
-
-      - name: Build
-        run: |
-          cargo build --release --target ${{ matrix.target }}
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Prepare artifacts
         env:
           SUFFIX: ${{ matrix.suffix }}
         run: |
-          echo "Building version $VERSION"
-
           mkdir -p dist
-          ls target/${{matrix.target}}/release
-
           if [[ "$SUFFIX" == "windows" ]]; then
             cp target/${{ matrix.target }}/release/fsp-gen.exe \
-              dist/fsp-gen-${VERSION}-windows.exe
-          else 
+               dist/fsp-gen-${VERSION}-windows.exe
+          else
             cp target/${{ matrix.target }}/release/fsp-gen \
-              dist/fsp-gen-${VERSION}-$SUFFIX
+               dist/fsp-gen-${VERSION}-$SUFFIX
           fi
 
       - name: Compress artifacts
         run: |
           cd dist
           if [[ "${{ matrix.suffix }}" == "windows" ]]; then
-            zip fsp-gen-${VERSION}-windows.zip \
-              fsp-gen-${VERSION}-windows.exe
+            zip fsp-gen-${VERSION}-windows.zip fsp-gen-${VERSION}-windows.exe
             rm fsp-gen-${VERSION}-windows.exe
-          else 
+          else
             tar -czvf fsp-gen-${VERSION}-${{ matrix.suffix }}.tar.gz \
               fsp-gen-${VERSION}-${{ matrix.suffix }}
             rm fsp-gen-${VERSION}-${{ matrix.suffix }}
           fi
 
-      - name: Install sha256sum on MacOS
-        if: matrix.os == 'macos-latest'
-        run: brew install coreutils
+      - run: ls dist
+      - run: pwd
 
-      - name: Generate SHA256 checksums
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Use a consistent short name so release can download by suffix
+          name: ${{ matrix.suffix }}
+          path: packages/fsp-gen/dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux
+          path: dist
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: dist
+
+      - name: Download macOS x86_64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-x86_64
+          path: dist
+
+      - name: Download macOS aarch64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-aarch64
+          path: dist
+
+      - name: Generate checksums
         run: |
           cd dist
           sha256sum * > SHA256SUMS.txt
 
-      - name: Upload Release Asset
+      - run: ls
+
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
