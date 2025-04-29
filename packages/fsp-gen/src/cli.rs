@@ -24,16 +24,6 @@ struct Cli {
 
     #[arg(short = 's', long)]
     seed: Option<u32>,
-    // #[arg(long)]
-    // lower_bound: Option<u32> = ,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    Generate {
-        #[arg(short, long)]
-        list: bool,
-    },
 }
 
 pub fn cli() {
