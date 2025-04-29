@@ -8,6 +8,7 @@ lib.rs exports different modules to a single `flowshop-rs` package for further r
 
 TODO: main.rs runs cli benchmarks generator. (currently this feature is available in different package `fsgen`).
 
+terated_greedy - as name suggest iterated greed + neh
 neh.rs - includes NEH heuristic implementation.
 neh_rayon.rs - consists of similar NEH heuristic but multithreaded.
 reader.rs - reader for taillard benchmark files
@@ -42,3 +43,15 @@ run:
 ```bash
 cargo flamegraph --bench benchmark_<name> -- --bench
 ```
+
+## Running
+
+run the `flamegraph` in rust
+
+You probably have to set
+
+```bash
+sudo sysctl kernel.perf_event_paranoid=1
+```
+
+temporarily.
