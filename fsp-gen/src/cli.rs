@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 use crate::generate::{generate_flow_shop, save_to_file};
 
@@ -9,9 +9,6 @@ struct Cli {
     // config: Option<PathBuf>,
     #[arg(short, long, action = clap::ArgAction::Count)]
     debug: u8,
-
-    #[command(subcommand)]
-    command: Option<Commands>,
 
     #[arg(short = 'm', long)]
     machines: u16,
@@ -24,7 +21,24 @@ struct Cli {
 
     #[arg(short = 's', long)]
     seed: Option<u32>,
+
+    #[command(subcommand)]
+    command: Option<Commands>,
 }
+
+#[derive(Subcommand)]
+enum Commands {
+    Generate(Generate),
+    Solve(Solve),
+}
+
+#[derive(Args)]
+struct Generate {
+    string: Option<String>,
+}
+
+#[derive(Args)]
+struct Solve {}
 
 pub fn cli() {
     let cli = Cli::parse();
@@ -37,11 +51,8 @@ pub fn cli() {
     }
 
     match &cli.command {
-        Some(Commands::Generate { list }) => {
-            if *list {
-                println!("Printing testing lists...");
-            }
-        }
+        Some(Commands::Generate(args)) => {}
+        Some(Commands::Solve(args)) => {}
         None => {
             let (processing_times, seed) = generate_flow_shop(cli.jobs, cli.machines, cli.seed);
 

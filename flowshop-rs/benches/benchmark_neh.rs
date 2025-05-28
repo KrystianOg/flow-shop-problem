@@ -18,13 +18,7 @@ fn benchmark_neh_versions(c: &mut Criterion) {
         // ("very_large", "taillard-benchmark/tai1000_50.txt"),
     ];
 
-    let neh_versions: [(&str, Fn); 2] = [
-        ("basic_neh", neh::neh),
-        ("rayon", neh_rayon::neh),
-        // ("improved_neh2", neh2::neh),
-        // ("neh3", neh3),
-        // ("neh_rayon", neh_rayon),
-    ];
+    let neh_versions: [(&str, Fn); 2] = [("basic_neh", neh::neh), ("rayon", neh_rayon::neh)];
 
     for (size_label, path) in datasets {
         let benchmarks = read_benchmarks(path);
@@ -50,5 +44,9 @@ fn benchmark_neh_versions(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, benchmark_neh_versions);
+criterion_group! {
+    name=benches;
+    config = Criterion::default().sample_size(10);
+    targets = benchmark_neh_versions
+}
 criterion_main!(benches);

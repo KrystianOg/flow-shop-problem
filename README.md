@@ -4,7 +4,7 @@
 
 ## Features
 
-- generate FSP instances with according to Taillard algorithm
+- generate FSP instances according to Taillard algorithm
 - solve FSP instances using built-in heuristics or optimization algorithms
 - support for various output formats
 - cross-platform compatibility.
@@ -68,17 +68,18 @@ After installation, you can use `fsp-gen` from your terminal or command prompt.
 fsp-gen generate --jobs 5 --machines 3 --output instance.json
 ```
 
-### Solve an FSP Instance
-
-```bash
-fsp-gen solve --input instance.json --algorithm greedy --output schedule.json
-```
-
-### Help
-
-```bash
-fsp-gen --help
-```
+<!-- ### Solve an FSP Instance -->
+<!---->
+<!-- ```bash -->
+<!-- fsp-gen solve --input instance.json --algorithm greedy --output schedule.json -->
+<!-- ``` -->
+<!---->
+<!-- ### Help -->
+<!---->
+<!-- ```bash -->
+<!-- fsp-gen --help -->
+<!-- ``` -->
+<!---->
 
 ## Checksums
 
@@ -91,3 +92,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contributing
 
 Contributions are welcome! Feel free to open an issue or submit a pull request.
+
+## References
+
+[1] https://annals-csis.org/proceedings/2023/drp/pdf/7072.pdf
